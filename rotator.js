@@ -7,6 +7,7 @@ const ROOT = __dirname;
 process.chdir(ROOT);
 const HOST = 'play.diyojennw.com.tr';
 const PORT = 25565;
+const PROXY_ROTATE = process.env.MC_PROXY_ROTATE !== '0';
 const SLOTS = Number(process.env.MC_SLOTS || 5);
 const ROTATE_MS = Number(process.env.MC_ROTATE_MS || 10000);
 const SESSION_MAX_MS = Number(process.env.MC_SESSION_MAX_MS || 120000);
@@ -80,7 +81,7 @@ function proxyForSlot(slot, forceNew) {
 function launch(slot) {
   const name = nextName();
   if (!name) { log('no names left (all stopped)'); return; }
-  const proxy = proxyForSlot(slot, false);
+  const proxy = proxyForSlot(slot, PROXY_ROTATE);
   const env = Object.assign({}, process.env, {
     MC_PROXY: proxy || '',
     MC_PROXIES_FILE: 'proxies-live.txt',
@@ -109,5 +110,5 @@ function launch(slot) {
 
 process.on('uncaughtException', (e) => log('rotator error: ' + e.message));
 process.on('SIGINT', () => process.exit(0));
-log('rotator start: slots=' + SLOTS + ' rotate=' + ROTATE_MS + 'ms cap=' + SESSION_MAX_MS + 'ms names=' + names.length + ' proxies=' + proxies.length);
+log('rotator start: slots=' + SLOTS + ' rotate=' + ROTATE_MS + 'ms cap=' + SESSION_MAX_MS + 'ms names=' + names.length + ' proxies=' + proxies.length + ' proxyRotate=' + (PROXY_ROTATE ? 'per-account' : 'sticky'));
 for (let s = 0; s < SLOTS; s++) setTimeout(() => launch(s), s * 300);
