@@ -301,7 +301,7 @@ function startBot() {
               const t0 = Date.now();
               const res = L.classifyFile(path.join(__dirname, LASTMAP_FILE));
               status('auto-answer: ' + JSON.stringify(res).slice(0, 160) + ' in ' + (Date.now() - t0) + 'ms');
-              if (res.answer && res.conf >= 0.62) {
+              if (res.answer && res.conf >= 0.45) {
                 let guess = res.answer;
                 if (banned.size && res.candidates) {
                   const alt = res.candidates.find(c => !banned.has(String(c).toLowerCase()));
