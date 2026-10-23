@@ -17,6 +17,9 @@ const { isBanDisconnect, createAccountStop } = require('./account-stop');
 const accountStop = createAccountStop(__dirname, HOST, PORT, USERNAME);
 if (accountStop.isStopped()) process.exit(0);
 let connectionStopped = false;
+const ROTATE_MS = Number(process.env.MC_ROTATE_MS || 0);
+const SESSION_MAX_MS = Number(process.env.MC_SESSION_MAX_MS || 0);
+let rotating = false;
 const VERSION = process.env.MC_VERSION || '1.21.11';
 const PER_BOT = BOT_ID !== 'BabaProGpt';
 const PASS_FILE = PER_BOT ? 'credentials-' + BOT_ID.toLowerCase() + '.txt' : 'credentials.txt';
@@ -190,7 +193,21 @@ function startBot() {
   });
 
   bot.on('login', () => status('LOGIN ok'));
-  bot.on('spawn', () => { status('SPAWN — inside server'); pinProxy(); chatWarmupUntil = Date.now() + Number(process.env.MC_CHAT_WARMUP || 60000); });
+  bot.on('spawn', () => {
+    status('SPAWN — inside server');
+    pinProxy();
+    chatWarmupUntil = Date.now() + Number(process.env.MC_CHAT_WARMUP || 60000);
+    if (ROTATE_MS > 0 && !rotating) {
+      rotating = true;
+      status('ROTATE armed: ' + ROTATE_MS + 'ms of spam');
+      setTimeout(() => {
+        status('ROTATE — switching account');
+        connectionStopped = true;
+        try { if (bot) bot.quit(); } catch (_) {}
+        setTimeout(() => process.exit(0), 1200);
+      }, ROTATE_MS);
+    }
+  });
   bot.on('end', (reason) => {
     status('end: ' + reason);
     scheduleReconnect();
@@ -206,6 +223,7 @@ function startBot() {
   });
   bot.on('kicked', (r) => {
     if (isBanDisconnect(r)) {
+      status('BANNED — server restriction: ' + JSON.stringify(r).slice(0, 900));
       connectionStopped = true;
       clearTimeout(reconnectTimer);
       reconnectTimer = null;
@@ -374,7 +392,7 @@ function handleChat(text, silent) {
 
 let reconnectTimer = null;
 function scheduleReconnect(delay = 6000) {
-  if (connectionStopped || accountStop.isStopped()) return;
+  if (rotating || connectionStopped || accountStop.isStopped()) return;
   if (reconnectTimer) { status('reconnect already pending — skip'); return; }
   if (bot) { try { bot.quit(); } catch (_) {} bot = null; }
   status('reconnecting in ' + delay + 'ms');
@@ -424,10 +442,21 @@ if (CHAT_LIST.length) {
   let chatIdx = 0;
   setInterval(() => {
     if (bot && bot._client && !captchaWaiting && Date.now() > chatWarmupUntil) {
-      try { bot.chat(CHAT_LIST[chatIdx % CHAT_LIST.length]); chatIdx++; } catch (_) {}
+      try { const m = CHAT_LIST[chatIdx % CHAT_LIST.length]; bot.chat(m); chatIdx++; status('SPAM: ' + m); } catch (_) {}
     }
   }, CHAT_MS);
 }
 
 fs.writeFileSync(ANSWER_FILE, '');
+if (SESSION_MAX_MS > 0) {
+  setTimeout(() => {
+    if (!rotating) {
+      rotating = true;
+      connectionStopped = true;
+      status('SESSION CAP — rotating out');
+      try { if (bot) bot.quit(); } catch (_) {}
+      setTimeout(() => process.exit(0), 1200);
+    }
+  }, SESSION_MAX_MS);
+}
 startBot();

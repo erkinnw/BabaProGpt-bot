@@ -36,3 +36,10 @@ messages.txt
 
 # generated launchers
 run-*.cmd
+
+# rotator runtime
+rotator-state.json
+rotator.pid
+map-last.json
+ascii204.txt
+ascii-union.txt
