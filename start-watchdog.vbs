@@ -1,0 +1,1 @@
+CreateObject("WScript.Shell").Run "powershell -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File C:\Users\user\Desktop\BabaProGpt-bot\watch-fleet.ps1 -MaxBots 500 -LoopSec 20 -LaunchPerCycle 10", 0, False

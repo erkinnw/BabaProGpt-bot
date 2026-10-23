@@ -1,0 +1,38 @@
+node_modules/
+
+# credentials & account data
+credentials*.txt
+answer*.txt
+*credentials*
+*password*
+proxy-pin-*.json
+banned-proxies.json
+
+# proxy lists
+proxies*.txt
+proxies*.json
+proxy-*.log
+
+# runtime artifacts
+*.log
+*.png
+*.bin
+*.tmp
+*.traineddata
+tessdata/
+maps/
+.account-stops/
+current-*
+last-map-*
+map-last-*
+map-dump-*.json
+hashdb.json
+wrongdb.json
+font.json
+templates.json
+labels.txt
+names-*.txt
+messages.txt
+
+# generated launchers
+run-*.cmd
